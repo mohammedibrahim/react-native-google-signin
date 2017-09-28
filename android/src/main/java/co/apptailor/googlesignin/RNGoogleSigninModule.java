@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.BaseActivityEventListener;
+import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -37,23 +37,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class RNGoogleSigninModule extends ReactContextBaseJavaModule {
+public class RNGoogleSigninModule extends ReactContextBaseJavaModule implements ActivityEventListener {
     private GoogleApiClient _apiClient;
 
     public static final int RC_SIGN_IN = 9001;
 
     public RNGoogleSigninModule(final ReactApplicationContext reactContext) {
         super(reactContext);
-        reactContext.addActivityEventListener(new RNGoogleSigninActivityEventListener());
+        reactContext.addActivityEventListener(this);
     }
 
-    private class RNGoogleSigninActivityEventListener extends BaseActivityEventListener {
-        @Override
-        public void onActivityResult(Activity activity, final int requestCode, final int resultCode, final Intent intent) {
-            if (requestCode == RNGoogleSigninModule.RC_SIGN_IN) {
-                GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(intent);
-                handleSignInResult(result, false);
-            }
+    @Override
+    public void onNewIntent(Intent intent) {}
+
+    @Override
+    public void onActivityResult(Activity activity, final int requestCode, final int resultCode, final Intent intent) {
+        if (requestCode == RNGoogleSigninModule.RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(intent);
+            handleSignInResult(result, false);
         }
     }
 
@@ -98,15 +99,7 @@ public class RNGoogleSigninModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void configure(
-            final ReadableArray scopes,
-            final String webClientId,
-            final Boolean offlineAccess,
-            final Boolean forceConsentPrompt,
-            final String accountName,
-            final String hostedDomain,
-            final Promise promise
-    ) {
+    public void configure(final ReadableArray scopes, final String webClientId, final Boolean offlineAccess, final Promise promise) {
         final Activity activity = getCurrentActivity();
 
         if (activity == null) {
@@ -118,7 +111,7 @@ public class RNGoogleSigninModule extends ReactContextBaseJavaModule {
             @Override
             public void run() {
                 _apiClient = new GoogleApiClient.Builder(activity.getBaseContext())
-                        .addApi(Auth.GOOGLE_SIGN_IN_API, getSignInOptions(scopes, webClientId, offlineAccess, forceConsentPrompt, accountName, hostedDomain))
+                        .addApi(Auth.GOOGLE_SIGN_IN_API, getSignInOptions(scopes, webClientId, offlineAccess))
                         .build();
                 _apiClient.connect();
                 promise.resolve(true);
@@ -263,44 +256,42 @@ public class RNGoogleSigninModule extends ReactContextBaseJavaModule {
                 .emit(eventName, params);
     }
 
-    private GoogleSignInOptions getSignInOptions(
-            final ReadableArray scopes,
-            final String webClientId,
-            final Boolean offlineAcess,
-            final Boolean forceConsentPrompt,
-            final String accountName,
-            final String hostedDomain
-    ) {
+    private GoogleSignInOptions getSignInOptions(final ReadableArray scopes, final String webClientId, final Boolean offlineAcess) {
 
         int size = scopes.size();
         Scope[] _scopes = new Scope[size];
 
         if(scopes != null && size > 0){
             for(int i = 0; i < size; i++){
-                if(scopes.getType(i).name().equals("String")){
+                if(scopes.getType(i).name() == "String"){
                     String scope = scopes.getString(i);
-                    if (!scope.equals("email")){ // will be added by default
+                    if (scope != "email"){ // will be added by default
                         _scopes[i] = new Scope(scope);
                     }
                 }
             }
         }
 
-        GoogleSignInOptions.Builder googleSignInOptionsBuilder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestScopes(new Scope("email"), _scopes);
         if (webClientId != null && !webClientId.isEmpty()) {
             if (!offlineAcess) {
-                googleSignInOptionsBuilder.requestIdToken(webClientId);
-            } else {
-                googleSignInOptionsBuilder.requestServerAuthCode(webClientId, forceConsentPrompt);
+                return new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken(webClientId)
+                        .requestScopes(new Scope("email"), _scopes)
+                        .build();
+            }
+            else {
+                return new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestServerAuthCode(webClientId, false)
+                        .requestScopes(new Scope("email"), _scopes)
+                        .build();
             }
         }
-        if (accountName != null && !accountName.isEmpty()) {
-            googleSignInOptionsBuilder.setAccountName(accountName);
+        else {
+            return new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestScopes(new Scope("email"), _scopes)
+                    .build();
         }
-        if (hostedDomain != null && !hostedDomain.isEmpty()) {
-            googleSignInOptionsBuilder.setHostedDomain(hostedDomain);
-        }
-        return googleSignInOptionsBuilder.build();
+
     }
 
     private void handleSignInResult(GoogleSignInResult result, Boolean isSilent) {
@@ -320,8 +311,6 @@ public class RNGoogleSigninModule extends ReactContextBaseJavaModule {
 
             params.putString("id", acct.getId());
             params.putString("name", acct.getDisplayName());
-            params.putString("givenName", acct.getGivenName());
-            params.putString("familyName", acct.getFamilyName());
             params.putString("email", acct.getEmail());
             params.putString("photo", photoUrl != null ? photoUrl.toString() : null);
             params.putString("idToken", acct.getIdToken());

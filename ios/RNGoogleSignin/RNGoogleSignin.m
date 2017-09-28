@@ -9,17 +9,14 @@ RCT_EXPORT_MODULE();
 @synthesize bridge = _bridge;
 
 
-RCT_EXPORT_METHOD(configure:(NSArray*)scopes iosClientId:(NSString*)iosClientId webClientId:(NSString*)webClientId hostedDomain:(NSString*)hostedDomain)
+RCT_EXPORT_METHOD(configure:(NSArray*)scopes iosClientId:(NSString*)iosClientId webClientId:(NSString*)webClientId)
 {
   [GIDSignIn sharedInstance].delegate = self;
   [GIDSignIn sharedInstance].uiDelegate = self;
 
   [GIDSignIn sharedInstance].scopes = scopes;
   [GIDSignIn sharedInstance].clientID = iosClientId;
-  
-  if (hostedDomain != nil) {
-    [GIDSignIn sharedInstance].hostedDomain = hostedDomain;
-  }
+
   if ([webClientId length] != 0) {
     [GIDSignIn sharedInstance].serverClientID = webClientId;
   }
@@ -113,8 +110,8 @@ RCT_EXPORT_METHOD(revokeAccess)
 }
 
 - (void) signIn:(GIDSignIn *)signIn presentViewController:(UIViewController *)viewController {
-    UIViewController *parent = [self topMostViewController];
-    [parent presentViewController:viewController animated:true completion:nil];
+    UIViewController *rootViewController = [[[[UIApplication sharedApplication]delegate] window] rootViewController];
+    [rootViewController presentViewController:viewController animated:true completion:nil];
 }
 
 - (void) signIn:(GIDSignIn *)signIn dismissViewController:(UIViewController *)viewController {
@@ -129,14 +126,5 @@ RCT_EXPORT_METHOD(revokeAccess)
                                       annotation:annotation];
 }
 
-#pragma mark - Internal Methods
-
-- (UIViewController *)topMostViewController {
-    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
-    while (topController.presentedViewController) {
-        topController = topController.presentedViewController;
-    }
-    return topController;
-}
 
 @end

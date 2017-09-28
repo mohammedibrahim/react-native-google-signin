@@ -1,4 +1,4 @@
-# react-native-google-signin
+# react-native-google-sign
 
 [![xcode config](https://github.com/apptailor/react-native-google-signin/raw/master/img/demo-app.gif)](#demo)
 
@@ -13,14 +13,9 @@
 
 ```bash
 npm install react-native-google-signin --save
-react-native link react-native-google-signin
 ```
 
-### Note
-
-If you use React Native < `v0.40` stick with `v0.8.1` (`npm install react-native-google-signin@0.8 --save`).
-
-If you use React Native < `v0.47` stick with `v0.10.0` (`npm install react-native-google-signin@0.10 --save`).
+**Warning**: For `react-native` >= v0.30 use `react-native-google-signin` >= v0.8.0
 
 ## Project setup and initialization
 
@@ -86,7 +81,7 @@ Example for default configuration. you get user email and basic profile info.
 import {GoogleSignin, GoogleSigninButton} from 'react-native-google-signin';
 
 GoogleSignin.configure({
-  iosClientId: <FROM DEVELOPER CONSOLE>, // only for iOS
+  iosClientId: <FROM DEVELOPPER CONSOLE>, // only for iOS
 })
 .then(() => {
   // you can now call currentUserAsync()
@@ -97,12 +92,9 @@ Example to access Google Drive both from the mobile application and from the bac
 ```js
 GoogleSignin.configure({
   scopes: ["https://www.googleapis.com/auth/drive.readonly"], // what API you want to access on behalf of the user, default is email and profile
-  iosClientId: <FROM DEVELOPER CONSOLE>, // only for iOS
-  webClientId: <FROM DEVELOPER CONSOLE>, // client ID of type WEB for your server (needed to verify user ID and offline access)
+  iosClientId: <FROM DEVELOPPER CONSOLE>, // only for iOS
+  webClientId: <FROM DEVELOPPER CONSOLE>, // client ID of type WEB for your server (needed to verify user ID and offline access)
   offlineAccess: true // if you want to access Google API on behalf of the user FROM YOUR SERVER
-  hostedDomain: '' // specifies a hosted domain restriction
-  forceConsentPrompt: true // [Android] if you want to show the authorization prompt at each login
-  accountName: '' // [Android] specifies an account name on the device that should be used
 })
 .then(() => {
   // you can now call currentUserAsync()
@@ -191,14 +183,12 @@ This is the typical information you obtain once the user sign in:
   {
     id: <user id. do not use on the backend>
     name: <user name>
-    givenName: <user given name> (Android only)
-    familyName: <user family name> (Android only)
     email: <user email>
     photo: <user picture profile>
     idToken: <token to authenticate the user on the backend>
     serverAuthCode: <one-time token to access Google API from the backend on behalf of the user>
     scopes: <list of authorized scopes>
-    accessToken: <needed to access google API from the application>
+    accessToken: <needed to access google API from the application> (iOS only)
   }
 ```
 
